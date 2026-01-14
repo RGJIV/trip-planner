@@ -1,61 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Strategic Navigator</title>
-    <style>
-        body { font-family: -apple-system, sans-serif; padding: 20px; background: #000; color: #fff; display: flex; justify-content: center; }
-        .card { background: #111; padding: 25px; border-radius: 20px; width: 100%; max-width: 480px; border: 1px solid #333; box-shadow: 0 20px 40px rgba(0,0,0,0.8); }
-        h2 { color: #22c55e; margin: 0 0 15px 0; font-size: 1.4rem; }
-        label { display: block; margin-bottom: 5px; font-size: 0.75em; color: #888; font-weight: bold; text-transform: uppercase; }
-        input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #333; background: #000; color: #fff; margin-bottom: 15px; box-sizing: border-box; font-size: 1rem; }
-        .btn { width: 100%; padding: 16px; background: #22c55e; color: #000; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1rem; margin-bottom: 10px; }
-        .share-link { width: 100%; padding: 10px; background: transparent; color: #22c55e; border: 1px solid #22c55e; border-radius: 10px; cursor: pointer; font-size: 0.8rem; }
-        .msg { font-size: 0.8em; color: #666; margin-top: 15px; border-left: 2px solid #22c55e; padding-left: 10px; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Custom Routing - 10% Over Speed Limit + Turn Penalty</title>
+  
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5n/N0ZDv4=" 
+        crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" 
+          crossorigin=""></script>
+  
+  <style>
+    body { margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; }
+    #map { height: 70vh; width: 100%; }
+    #controls {
+      padding: 15px;
+      background: #f8f9fa;
+      border-bottom: 1px solid #ddd;
+    }
+    input, button {
+      padding: 8px;
+      margin: 5px;
+      font-size: 16px;
+    }
+    #status { color: #666; margin-top: 10px; }
+  </style>
 </head>
 <body>
-    <div class="card">
-        <h2>🚢 Strategic Planner</h2>
-        
-        <label>Start Location</label>
-        <input type="text" id="origin" value="55 Chestnut Sq, Cashiers, NC 28717">
 
-        <label>Strategic Bypass (SC-11)</label>
-        <input type="text" id="bypass" value="34.9080,-82.9010" readonly style="color: #444;">
+<div id="controls">
+  <h2>Custom Routing Prototype</h2>
+  <label>Origin: </label>
+  <input type="text" id="origin" placeholder="e.g. Highlands, NC" size="30"/>
+  <label>Destination: </label>
+  <input type="text" id="destination" placeholder="e.g. Asheville, NC" size="30"/>
+  <button onclick="planRoute()">Calculate Custom Route</button>
+  <div id="status">Waiting for input…</div>
+</div>
 
-        <label>Final Destination</label>
-        <input type="text" id="destination" value="139 Laurens St NW, Aiken, SC 29801">
+<div id="map"></div>
 
-        <button class="btn" onclick="buildUrl(false)">LAUNCH NAV</button>
-        <button class="share-link" onclick="buildUrl(true)">COPY SHARE LINK</button>
+<script>
+  // Initialize basic Leaflet map (OpenStreetMap tiles)
+  const map = L.map('map').setView([35.0526, -83.1968], 12); // centered near Highlands, NC
+  
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(map);
 
-        <div id="status" style="text-align: center; font-size: 0.8rem; margin-top: 10px; color: #22c55e;"></div>
+  let currentRouteLayer = null;
 
-        <div class="msg">
-            <strong>CRUISE METHODOLOGY:</strong> Forces route via Cherokee Foothills Hwy to maintain 110% velocity and bypass Clemson/Seneca traffic light tax.
-        </div>
-    </div>
+  async function planRoute() {
+    const origin = document.getElementById('origin').value.trim();
+    const dest = document.getElementById('destination').value.trim();
+    const status = document.getElementById('status');
 
-    <script>
-        function buildUrl(isShare) {
-            const start = encodeURIComponent(document.getElementById('origin').value);
-            const end = encodeURIComponent(document.getElementById('destination').value);
-            const waypoint = document.getElementById('bypass').value;
+    if (!origin || !dest) {
+      status.textContent = "Please enter both origin and destination.";
+      return;
+    }
 
-            // This specific URL structure forces Google Maps into Directions Mode
-            // 'api=1' + 'direction' + 'origin' + 'destination' + 'waypoints'
-            const finalUrl = `https://www.google.com/maps/dir/?api=1&origin=${start}&destination=${end}&waypoints=${waypoint}&travelmode=driving`;
+    status.textContent = "Planning route... (Note: custom speed & turn penalty logic not yet implemented)";
 
-            if (isShare) {
-                navigator.clipboard.writeText(finalUrl);
-                document.getElementById('status').innerText = "Link copied to clipboard!";
-                setTimeout(() => { document.getElementById('status').innerText = ""; }, 3000);
-            } else {
-                window.open(finalUrl, '_blank');
-            }
-        }
-    </script>
+    // Placeholder - real routing will use GraphHopper, OSRM, Valhalla, etc.
+    // This example just draws a straight line for visual placeholder
+    try {
+      // Clear previous route
+      if (currentRouteLayer) map.removeLayer(currentRouteLayer);
+
+      // Very basic demo - straight line (will be replaced with real routing)
+      const bounds = await getBoundsForDemo(origin, dest);
+      currentRouteLayer = L.polyline(bounds, {color: 'blue', weight: 5}).addTo(map);
+      map.fitBounds(bounds);
+
+      status.textContent = "Route displayed (demo straight line). Real custom routing (GraphHopper + custom model) will be added next.";
+    } catch (err) {
+      status.textContent = "Error: " + err.message;
+    }
+  }
+
+  // Helper for demo only - gets rough coordinates (replace with real geocoding)
+  async function getBoundsForDemo(start, end) {
+    const geocode = async (q) => {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`);
+      const data = await res.json();
+      if (!data.length) throw new Error("Location not found");
+      return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+    };
+    const p1 = await geocode(start);
+    const p2 = await geocode(end);
+    return [p1, p2];
+  }
+</script>
 </body>
 </html>
