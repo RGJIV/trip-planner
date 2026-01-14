@@ -3,75 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Strategic Cruise Planner</title>
+    <title>Local Legend Navigator</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #0f172a; color: white; display: flex; justify-content: center; }
-        .card { background: #1e293b; padding: 30px; border-radius: 15px; width: 100%; max-width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #334155; }
-        h2 { color: #4ade80; margin-top: 0; }
-        .input-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-size: 0.85em; color: #94a3b8; }
-        input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; margin-bottom: 10px; }
-        button.action-btn { width: 100%; padding: 15px; background: #22c55e; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1.1em; margin-top: 10px; }
-        button.share-btn { width: 100%; padding: 10px; background: #334155; color: #4ade80; border: 1px solid #4ade80; border-radius: 8px; cursor: pointer; margin-top: 10px; }
-        .add-stop { color: #4ade80; cursor: pointer; font-size: 0.9em; text-decoration: underline; }
-        .stop-item { display: flex; gap: 5px; margin-bottom: 5px; }
-        .remove-btn { background: #ef4444; border: none; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; background: #000; color: #fff; display: flex; justify-content: center; }
+        .card { background: #111; padding: 25px; border-radius: 20px; width: 100%; max-width: 480px; border: 1px solid #333; box-shadow: 0 20px 40px rgba(0,0,0,0.8); }
+        h2 { color: #22c55e; margin: 0 0 10px 0; font-size: 1.5rem; letter-spacing: -0.5px; }
+        .input-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-size: 0.8em; color: #888; text-transform: uppercase; font-weight: 700; }
+        input { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #333; background: #000; color: #fff; box-sizing: border-box; font-size: 1rem; }
+        .action-btn { width: 100%; padding: 18px; background: #22c55e; color: #000; border: none; border-radius: 12px; font-weight: 800; cursor: pointer; font-size: 1.1rem; transition: 0.2s; }
+        .action-btn:active { transform: scale(0.98); background: #16a34a; }
+        .share-btn { width: 100%; padding: 12px; background: transparent; color: #22c55e; border: 1px solid #22c55e; border-radius: 12px; cursor: pointer; margin-top: 12px; font-weight: 600; }
+        .warning { background: #450a0a; color: #fca5a5; padding: 15px; border-radius: 12px; margin-top: 20px; font-size: 0.85em; line-height: 1.4; border: 1px solid #991b1b; }
+        #status { text-align: center; color: #22c55e; font-size: 0.8em; margin-top: 10px; height: 1em; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h2>🚢 Strategic Planner</h2>
+        <h2>🚢 Strategic Navigator</h2>
         
         <div class="input-group">
-            <label>Start Address</label>
-            <input type="text" id="origin" value="55 Chestnut Sq, Cashiers, NC">
+            <label>Start (Defaulting to Cashiers)</label>
+            <input type="text" id="origin" value="55 Chestnut Sq, Cashiers, NC 28717">
         </div>
 
-        <div id="stop-container">
-            <label>Intermediate Stops</label>
+        <div class="input-group">
+            <label>Strategic Waypoints (Auto-injected if SE)</label>
+            <input type="text" id="stops" placeholder="Optional stops (comma separated)">
         </div>
-        <span class="add-stop" onclick="addStop()">+ Add a stop</span>
 
-        <div class="input-group" style="margin-top: 20px;">
+        <div class="input-group">
             <label>Final Destination</label>
-            <input type="text" id="destination" placeholder="e.g. Aiken, Columbia, Charleston">
+            <input type="text" id="destination" value="139 Laurens St NW, Aiken, SC 29801">
         </div>
 
-        <button class="action-btn" onclick="launchNavigation(false)">Launch Navigation</button>
-        <button class="share-btn" onclick="launchNavigation(true)">Copy Share Link to Text</button>
+        <button class="action-btn" onclick="launch(false)">LAUNCH 110% ROUTE</button>
+        <button class="share-btn" onclick="launch(true)">COPY TEXTABLE LINK</button>
 
-        <p id="status" style="font-size: 0.8em; color: #4ade80; text-align: center; margin-top: 10px;"></p>
+        <p id="status"></p>
+
+        <div class="warning">
+            <strong>LOCAL LEGEND ADVISORY:</strong> 110% Velocity applied to mountains. Forced SC-11 bypass active for SE heading. Watch Walhalla and Aiken entry radar.
+        </div>
     </div>
 
     <script>
-        function addStop() {
-            const container = document.getElementById('stop-container');
-            const div = document.createElement('div');
-            div.className = 'stop-item';
-            div.innerHTML = `<input type="text" class="waypoint-input" placeholder="Stop address..."><button class="remove-btn" onclick="this.parentElement.remove()">X</button>`;
-            container.appendChild(div);
-        }
-
-        function launchNavigation(isShare) {
+        function launch(isShare) {
             const origin = document.getElementById('origin').value;
-            const dest = document.getElementById('destination').value;
-            const stops = Array.from(document.querySelectorAll('.waypoint-input')).map(input => input.value).filter(v => v !== "");
+            const destination = document.getElementById('destination').value;
+            const userStops = document.getElementById('stops').value;
             
-            // Strategic Logic: Force SC-11 for Greenville-bound trips and beyond
-            const scCities = ["Greenville", "Aiken", "Columbia", "Charleston", "Spartanburg", "Orangeburg", "Augusta"];
-            let waypointStr = stops.join('|');
+            // COORD-SNAPPING: This coordinate is strictly on SC-11 near Lake Keowee
+            // It "pulls" Google Maps away from the Seneca/Clemson traffic trap.
+            const sc11Bypass = "34.9080,-82.9010";
             
-            const isHeadingEastSouth = scCities.some(city => dest.toLowerCase().includes(city.toLowerCase()));
+            let waypointArray = [];
             
-            if(isHeadingEastSouth) {
-                waypointStr += (waypointStr ? "|" : "") + "34.9080,-82.9010";
+            // Check if heading towards typical high-friction SC zones
+            const targetRegions = ["greenville", "aiken", "columbia", "charleston", "augusta", "29801", "29601"];
+            const isTarget = targetRegions.some(region => destination.toLowerCase().includes(region));
+
+            // Force SC-11 if applicable
+            if (isTarget) waypointArray.push(sc11Bypass);
+            
+            // Add user stops
+            if (userStops) {
+                userStops.split(',').forEach(s => waypointArray.push(s.trim()));
             }
 
-            const url = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&waypoints=${encodeURIComponent(waypointStr)}&travelmode=driving`;
+            // Constructing the "Directions Mode" URL
+            // saddr = start, daddr = destination, +to: = waypoints
+            let url = `https://www.google.com/maps?saddr=${encodeURIComponent(origin)}&daddr=${encodeURIComponent(destination)}`;
             
-            if(isShare) {
+            if (waypointArray.length > 0) {
+                url += `+to:${waypointArray.map(w => encodeURIComponent(w)).join('+to:')}`;
+            }
+            
+            // Force Driving Mode
+            url += `&dirflg=d`;
+
+            if (isShare) {
                 navigator.clipboard.writeText(url);
-                document.getElementById('status').innerText = "Link copied! Ready to text.";
+                document.getElementById('status').innerText = "Strategic Link Copied!";
+                setTimeout(() => { document.getElementById('status').innerText = ""; }, 3000);
             } else {
                 window.open(url, '_blank');
             }
