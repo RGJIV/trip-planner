@@ -3,49 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Strategic Navigator v8</title>
+    <title>Strategic Navigator</title>
     <style>
         body { font-family: -apple-system, sans-serif; padding: 20px; background: #000; color: #fff; display: flex; justify-content: center; }
-        .card { background: #111; padding: 25px; border-radius: 20px; width: 100%; max-width: 480px; border: 1px solid #333; }
-        h2 { color: #22c55e; margin: 0 0 15px 0; }
-        label { display: block; margin-bottom: 5px; font-size: 0.75em; color: #888; font-weight: bold; }
-        input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #333; background: #000; color: #fff; margin-bottom: 15px; box-sizing: border-box; }
-        .action-btn { width: 100%; padding: 16px; background: #22c55e; color: #000; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
-        .info { font-size: 0.8em; color: #666; margin-top: 15px; border-left: 2px solid #22c55e; padding-left: 10px; }
+        .card { background: #111; padding: 25px; border-radius: 20px; width: 100%; max-width: 480px; border: 1px solid #333; box-shadow: 0 20px 40px rgba(0,0,0,0.8); }
+        h2 { color: #22c55e; margin: 0 0 15px 0; font-size: 1.4rem; }
+        label { display: block; margin-bottom: 5px; font-size: 0.75em; color: #888; font-weight: bold; text-transform: uppercase; }
+        input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #333; background: #000; color: #fff; margin-bottom: 15px; box-sizing: border-box; font-size: 1rem; }
+        .btn { width: 100%; padding: 16px; background: #22c55e; color: #000; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1rem; margin-bottom: 10px; }
+        .share-link { width: 100%; padding: 10px; background: transparent; color: #22c55e; border: 1px solid #22c55e; border-radius: 10px; cursor: pointer; font-size: 0.8rem; }
+        .msg { font-size: 0.8em; color: #666; margin-top: 15px; border-left: 2px solid #22c55e; padding-left: 10px; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h2>🚢 Cruise Planner</h2>
+        <h2>🚢 Strategic Planner</h2>
         
-        <label>STARTING POINT</label>
+        <label>Start Location</label>
         <input type="text" id="origin" value="55 Chestnut Sq, Cashiers, NC 28717">
 
-        <label>FINAL DESTINATION</label>
+        <label>Strategic Bypass (SC-11)</label>
+        <input type="text" id="bypass" value="34.9080,-82.9010" readonly style="color: #444;">
+
+        <label>Final Destination</label>
         <input type="text" id="destination" value="139 Laurens St NW, Aiken, SC 29801">
 
-        <button class="action-btn" onclick="launchNav()">GET STRATEGIC ROUTE</button>
+        <button class="btn" onclick="buildUrl(false)">LAUNCH NAV</button>
+        <button class="share-link" onclick="buildUrl(true)">COPY SHARE LINK</button>
 
-        <div class="info">
-            <strong>SEQUENCE LOGIC:</strong> Forces SC-11 (Cherokee Foothills) as Waypoint 1 to eliminate the Seneca/Clemson traffic light tax. Maintains 110% velocity profile.
+        <div id="status" style="text-align: center; font-size: 0.8rem; margin-top: 10px; color: #22c55e;"></div>
+
+        <div class="msg">
+            <strong>CRUISE METHODOLOGY:</strong> Forces route via Cherokee Foothills Hwy to maintain 110% velocity and bypass Clemson/Seneca traffic light tax.
         </div>
     </div>
 
     <script>
-        function launchNav() {
+        function buildUrl(isShare) {
             const start = encodeURIComponent(document.getElementById('origin').value);
             const end = encodeURIComponent(document.getElementById('destination').value);
-            
-            // This is the specific coordinate on SC-11 that keeps you on the bypass
-            const strategicWaypoint = "34.9080,-82.9010";
+            const waypoint = document.getElementById('bypass').value;
 
-            // GOOGLE MAPS DIRECTIONS API FORMAT
-            // origin: Starting point
-            // destination: Final stop
-            // waypoints: The "via" point. Note the 'via:' prefix which forces it to be a drive-through point in order.
-            const url = `https://www.google.com/maps/dir/?api=1&origin=${start}&destination=${end}&waypoints=via:${strategicWaypoint}&travelmode=driving`;
-            
-            window.open(url, '_blank');
+            // This specific URL structure forces Google Maps into Directions Mode
+            // 'api=1' + 'direction' + 'origin' + 'destination' + 'waypoints'
+            const finalUrl = `https://www.google.com/maps/dir/?api=1&origin=${start}&destination=${end}&waypoints=${waypoint}&travelmode=driving`;
+
+            if (isShare) {
+                navigator.clipboard.writeText(finalUrl);
+                document.getElementById('status').innerText = "Link copied to clipboard!";
+                setTimeout(() => { document.getElementById('status').innerText = ""; }, 3000);
+            } else {
+                window.open(finalUrl, '_blank');
+            }
         }
     </script>
 </body>
