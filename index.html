@@ -20,11 +20,12 @@
       background: #f8f9fa;
       border-bottom: 1px solid #ddd;
     }
-    input, button {
+    input, button, label {
       padding: 8px;
       margin: 5px;
       font-size: 16px;
     }
+    .tweak { display: block; margin: 10px 0; }
     #status { color: #666; margin-top: 10px; }
   </style>
 </head>
@@ -32,11 +33,38 @@
 
 <div id="controls">
   <h2>Custom Routing Prototype</h2>
-  <p><small>Using pre-configured GraphHopper API key (visible in source)</small></p>
+  <p><small>API key hard-coded (visible in source). Tweak parameters below.</small></p>
+  
   <label>Origin: </label>
-  <input type="text" id="origin" placeholder="e.g. Highlands, NC" size="30"/>
+  <input type="text" id="origin" value="55 Chestnut Sq, Cashiers, NC 28717" size="40"/><br/>
+  
   <label>Destination: </label>
-  <input type="text" id="destination" placeholder="e.g. Asheville, NC" size="30"/>
+  <input type="text" id="destination" value="139 Laurens St NW, Aiken, SC 29801" size="40"/><br/>
+  
+  <div class="tweak">
+    <label>Speed Multiplier (1.0 = default): </label>
+    <input type="range" id="speedMult" min="0.5" max="1.5" step="0.05" value="1.1"/>
+    <span id="speedVal">1.1</span>x
+  </div>
+  
+  <div class="tweak">
+    <label>Penalize Small Roads (0.1 = strong avoid, 1.0 = no penalty): </label>
+    <input type="range" id="smallPenalty" min="0.1" max="1.0" step="0.05" value="0.5"/>
+    <span id="smallVal">0.5</span>
+  </div>
+  
+  <div class="tweak">
+    <label>Favor Major Roads (1.0 = default, 2.0 = strong favor): </label>
+    <input type="range" id="majorFavor" min="1.0" max="2.0" step="0.1" value="1.5"/>
+    <span id="majorVal">1.5</span>
+  </div>
+  
+  <div class="tweak">
+    <label>Distance Influence (0 = fastest, 300 = shortest): </label>
+    <input type="range" id="distInfl" min="0" max="300" step="10" value="50"/>
+    <span id="distVal">50</span>
+  </div>
+  
   <button onclick="planRoute()">Calculate Custom Route</button>
   <div id="status">Waiting for input…</div>
 </div>
@@ -46,14 +74,19 @@
 <script>
   const API_KEY = "a18fb72d-5c88-4fd1-ac9c-c504d86796c6";
 
-  // Initialize basic Leaflet map (OpenStreetMap tiles)
-  const map = L.map('map').setView([35.0526, -83.1968], 12); // centered near Highlands, NC
+  const map = L.map('map').setView([35.1, -83.1], 10);
   
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(map);
 
   let currentRouteLayer = null;
+
+  // Update displayed values when sliders move
+  document.getElementById('speedMult').oninput = function() { document.getElementById('speedVal').textContent = this.value; };
+  document.getElementById('smallPenalty').oninput = function() { document.getElementById('smallVal').textContent = this.value; };
+  document.getElementById('majorFavor').oninput = function() { document.getElementById('majorVal').textContent = this.value; };
+  document.getElementById('distInfl').oninput = function() { document.getElementById('distVal').textContent = this.value; };
 
   async function planRoute() {
     const origin = document.getElementById('origin').value.trim();
@@ -68,23 +101,23 @@
     status.textContent = "Planning route...";
 
     try {
-      // Get coordinates using Nominatim (OpenStreetMap geocoding)
       const origCoord = await geocode(origin);
       const destCoord = await geocode(dest);
 
-      // Define custom model: increase speed by 10% globally, penalize smaller roads
+      const speedMult = document.getElementById('speedMult').value;
+      const smallPenalty = document.getElementById('smallPenalty').value;
+      const majorFavor = document.getElementById('majorFavor').value;
+      const distInfl = parseInt(document.getElementById('distInfl').value);
+
       const customModel = {
-        "speed": [
-          { "if": "true", "multiply_by": "1.1" }
-        ],
+        "speed": [{ "if": "true", "multiply_by": speedMult }],
         "priority": [
-          { "if": "road_class == RESIDENTIAL || road_class == SERVICE || road_class == UNCLASSIFIED", "multiply_by": "0.5" },
-          { "if": "road_class == PRIMARY || road_class == SECONDARY", "multiply_by": "1.5" }
+          { "if": "road_class == RESIDENTIAL || road_class == SERVICE || road_class == UNCLASSIFIED", "multiply_by": smallPenalty },
+          { "if": "road_class == PRIMARY || road_class == SECONDARY", "multiply_by": majorFavor }
         ],
-        "distance_influence": 50
+        "distance_influence": distInfl
       };
 
-      // Fetch route from GraphHopper
       const url = `https://graphhopper.com/api/1/route?point=${origCoord.lat},${origCoord.lon}&point=${destCoord.lat},${destCoord.lon}&profile=car&key=${API_KEY}&custom_model=${encodeURIComponent(JSON.stringify(customModel))}&details=road_class`;
       const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP error: ${res.status} - ${await res.text()}`);
@@ -93,10 +126,8 @@
       const path = data.paths[0];
       const points = decodePolyline(path.points);
 
-      // Clear previous route
       if (currentRouteLayer) map.removeLayer(currentRouteLayer);
 
-      // Draw route
       currentRouteLayer = L.polyline(points, {color: 'blue', weight: 5}).addTo(map);
       map.fitBounds(currentRouteLayer.getBounds());
 
