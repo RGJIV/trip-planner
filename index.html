@@ -25,7 +25,7 @@
 
 <div id="controls">
   <h2>Custom Routing Prototype</h2>
-  <p><small>API key hard-coded. Adjust sliders for effect. Stronger values = more deviation from default.</small></p>
+  <p><small>API key hard-coded. Sliders now apply via POST (no URL limit). Test extremes for visible changes.</small></p>
   
   <label>Origin: </label>
   <input type="text" id="origin" value="55 Chestnut Sq, Cashiers, NC 28717" size="40"/><br/>
@@ -93,7 +93,7 @@
       return;
     }
 
-    status.textContent = "Planning route... (custom model may take longer)";
+    status.textContent = "Planning route... (POST with custom model)";
 
     try {
       const origCoord = await geocode(origin);
@@ -121,8 +121,18 @@
         distance_influence: distInfl
       };
 
-      const url = `https://graphhopper.com/api/1/route?point=${origCoord.lat},${origCoord.lon}&point=${destCoord.lat},${destCoord.lon}&profile=car&key=${API_KEY}&custom_model=${encodeURIComponent(JSON.stringify(customModel))}&details=road_class`;
-      const res = await fetch(url);
+      const requestBody = {
+        points: [[origCoord.lat, origCoord.lon], [destCoord.lat, destCoord.lon]],
+        profile: "car",
+        custom_model: customModel,
+        details: ["road_class"]
+      };
+
+      const res = await fetch("https://graphhopper.com/api/1/route", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "GET": `key=${API_KEY}` },
+        body: JSON.stringify(requestBody)
+      });
       if (!res.ok) {
         const errText = await res.text();
         throw new Error(`HTTP ${res.status}: ${errText}`);
