@@ -2,31 +2,87 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Route Planning Webpage</title>
+    <title>Route Planning Webpage - Cashiers, NC</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
     <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
     <style>
+        body { margin: 0; padding: 10px; font-family: Arial, sans-serif; }
+        #controls { margin-bottom: 10px; }
+        input { width: 300px; margin: 5px 0; padding: 5px; }
+        button { padding: 8px 16px; cursor: pointer; }
         #map { height: 600px; }
     </style>
 </head>
 <body>
+    <div id="controls">
+        <label>Start Address:</label><br>
+        <input type="text" id="startAddress" placeholder="e.g., 55 Chestnut Square, Cashiers, NC" value="55 Chestnut Square, Cashiers, NC"><br>
+        <label>End Address:</label><br>
+        <input type="text" id="endAddress" placeholder="e.g., US-64, Cashiers, NC" value="US-64, Cashiers, NC"><br>
+        <button onclick="calculateRoute()">Calculate Route</button>
+    </div>
+
     <div id="map"></div>
+
     <script>
-        var map = L.map('map').setView([51.505, -0.09], 13);
+        var map = L.map('map').setView([35.1072, -83.0930], 14); // Center on Cashiers, NC
+
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
-        L.Routing.control({
-            waypoints: [
-                L.latLng(51.5, -0.1),
-                L.latLng(51.51, -0.13)
-            ],
+        var routingControl = L.Routing.control({
+            waypoints: [],
             routeWhileDragging: true,
-            geocoder: L.Control.Geocoder.nominatim()
+            geocoder: L.Control.Geocoder.nominatim(),
+            show: true,
+            collapsible: true
         }).addTo(map);
+
+        function calculateRoute() {
+            var startAddr = document.getElementById('startAddress').value.trim();
+            var endAddr = document.getElementById('endAddress').value.trim();
+
+            if (!startAddr || !endAddr) {
+                alert('Please enter both start and end addresses.');
+                return;
+            }
+
+            routingControl.setWaypoints([]);
+
+            L.Control.Geocoder.nominatim().geocode(startAddr, function(results) {
+                if (results && results.length > 0) {
+                    var startPoint = results[0].center;
+
+                    L.Control.Geocoder.nominatim().geocode(endAddr, function(endResults) {
+                        if (endResults && endResults.length > 0) {
+                            var endPoint = endResults[0].center;
+
+                            routingControl.setWaypoints([
+                                L.latLng(startPoint.lat, startPoint.lng),
+                                L.latLng(endPoint.lat, endPoint.lng)
+                            ]);
+
+                            routingControl.on('routesfound', function(e) {
+                                var bounds = L.latLngBounds(e.routes[0].coordinates);
+                                map.fitBounds(bounds);
+                            });
+                        } else {
+                            alert('Could not find end address.');
+                        }
+                    });
+                } else {
+                    alert('Could not find start address.');
+                }
+            });
+        }
+
+        // Automatically calculate route with defaults on page load
+        window.onload = function() {
+            calculateRoute();
+        };
     </script>
 </body>
 </html>
